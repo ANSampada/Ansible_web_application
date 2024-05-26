@@ -1,0 +1,65 @@
+- name: Deploy Web Application
+  hosts: agent1
+  become: yes
+  tasks:
+    - name: install all required dependencies
+      apt: name={{ item }} state=latest
+      with_items: 
+        - python3
+        - python3-setuptools 
+        - python3-dev 
+        - build-essential 
+        - python3-pip 
+        - python3-mysqldb
+        - python3-venv
+
+    - name: Install mysql DataBase
+      apt: name={{ item }} state=present
+      with_items:
+        - mysql-server
+        - mysql-client
+
+    - name: start mysql service
+      service:
+        name: mysql
+        state: started
+        enabled: yes
+
+    - name: create application database
+      mysql_db: name=employee_db state=present
+
+    - name: Create Database user
+      mysql_user:
+        name: db_user
+        password: Passw0rd
+        priv: '*.*:ALL'
+        state: present
+        host: '%'
+
+    - name: Create a virtual environment
+      command: python3 -m venv /opt/myenv
+      args:
+        creates: /opt/myenv/bin/activate
+
+    - name: Install Python packages in the virtual environment
+      pip:
+        name: "{{ item }}"
+        virtualenv: /opt/myenv
+      loop:
+        - flask
+        - flask-mysql
+
+    - name: Set FLASK_APP environment variable
+      shell: echo "export FLASK_APP=/opt/app.py" >> /opt/myenv/bin/activate
+
+    - name: Copy source code
+      copy: src=app.py dest=/opt/app.py
+
+    - name: start wev server
+      shell: |
+        source /opt/myenv/bin/activate
+        FlASK_APP=/opt/app.py nohup flask run --host=0.0.0.0 &
+      args:
+        executable: /bin/bash
+      environment:
+        FLASK_APP: /opt/app.py
