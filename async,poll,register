@@ -1,0 +1,40 @@
+-
+  name: Deploy a mysql DB
+  hosts: db_server
+  roles:
+    - python
+    - mysql_db
+
+-
+  name: Deploy a Web Server
+  hosts: web_server
+  roles:
+    - python
+    - flask_web
+
+#in the below task we are setting async value to 360 means even for a long time ansible will be able to keep the connaction for 6 mins and poll=30 will check for every 
+#30 second what it the status
+
+-
+  name: Monitor Web Application for 6 Minutes
+  hosts: web_server
+  command: /opt/monitor_webapp.py
+  async: 360
+  poll: 30
+
+#in the below task we are setting async value to 360 means even for a long time ansible will be able to keep the connaction for 6 mins and poll=0 will leave the task and 
+#forget about it and run the different task parallely inspite of leving it as it is then we need to register the output to the to the abother file.
+-
+  name: Monitor Web Application for 6 Minutes
+  hosts: web_server
+  command: /opt/monitor_webapp.py
+  async: 360
+  poll: 0
+  register: webapp_result
+ -
+  name: Monitor Web Application for 6 Minutes
+  hosts: web_server
+  command: /opt/monitor_webapp.py
+  async: 360
+  poll: 0
+
